@@ -26,9 +26,9 @@ jobs:
               set -euo pipefail
               curl -LsSf https://astral.sh/uv/install.sh | sh
               /root/.local/bin/uv python install "${PYTHON_VERSION}"
-              /root/.local/bin/uv sync --group build --python "${PYTHON_VERSION}" --reinstall
-              /root/.local/bin/uv run python -c "import sysconfig; raise SystemExit(0 if sysconfig.get_config_var('Py_ENABLE_SHARED') else 'PyInstaller requires a shared-library Python')"
-              /root/.local/bin/uv run pyinstaller \
+              /root/.local/bin/uv sync --no-default-groups --group build --python "${PYTHON_VERSION}" --reinstall
+              /root/.local/bin/uv run --no-default-groups --group build python -c "import sysconfig; raise SystemExit(0 if sysconfig.get_config_var(\"Py_ENABLE_SHARED\") else \"PyInstaller requires a shared-library Python\")"
+              /root/.local/bin/uv run --no-default-groups --group build pyinstaller \
                 --onefile \
                 --clean \
                 --name bazarr-subsync \
