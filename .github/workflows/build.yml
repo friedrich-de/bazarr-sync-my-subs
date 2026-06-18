@@ -18,7 +18,7 @@ jobs:
       - name: Check out
         uses: actions/checkout@v5
 
-      - name: Build binary
+      - name: Build glibc binary
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/workspace" \
@@ -40,22 +40,53 @@ jobs:
                 --paths src \
                 --add-binary "bin/alass:bin" \
                 src/bazarr_subsync/__main__.py
-              cp dist/bazarr-subsync dist/bazarr-subsync-linux-x86_64
-              chmod 755 dist/bazarr-subsync-linux-x86_64
+              cp dist/bazarr-subsync dist/bazarr-subsync-linux-x86_64-gnu
+              chmod 755 dist/bazarr-subsync-linux-x86_64-gnu
               chown -R "${RUNNER_UID}:${RUNNER_GID}" dist build .venv
             '
 
-      - name: Upload binary artifact
+      - name: Build musl binary
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e PYTHON_VERSION \
+            -e RUNNER_UID="$(id -u)" \
+            -e RUNNER_GID="$(id -g)" \
+            quay.io/pypa/musllinux_1_2_x86_64 \
+            /bin/sh -lc '
+              set -eu
+              rm -rf build .venv
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              /root/.local/bin/uv python install "${PYTHON_VERSION}"
+              /root/.local/bin/uv sync --no-default-groups --group build --python "${PYTHON_VERSION}" --reinstall
+              /root/.local/bin/uv run --no-default-groups --group build python -c "import sysconfig; raise SystemExit(0 if sysconfig.get_config_var(\"Py_ENABLE_SHARED\") else \"PyInstaller requires a shared-library Python\")"
+              /root/.local/bin/uv run --no-default-groups --group build pyinstaller \
+                --onefile \
+                --clean \
+                --name bazarr-subsync \
+                --paths src \
+                --add-binary "bin/alass:bin" \
+                src/bazarr_subsync/__main__.py
+              cp dist/bazarr-subsync dist/bazarr-subsync-linux-x86_64-musl
+              chmod 755 dist/bazarr-subsync-linux-x86_64-musl
+              chown -R "${RUNNER_UID}:${RUNNER_GID}" dist build .venv
+            '
+
+      - name: Upload binary artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bazarr-subsync-linux-x86_64
-          path: dist/bazarr-subsync-linux-x86_64
+          path: |
+            dist/bazarr-subsync-linux-x86_64-gnu
+            dist/bazarr-subsync-linux-x86_64-musl
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            dist/bazarr-subsync-linux-x86_64 \
+            dist/bazarr-subsync-linux-x86_64-gnu \
+            dist/bazarr-subsync-linux-x86_64-musl \
             --title "$GITHUB_REF_NAME" \
-            --notes "Built Linux x86_64 Bazarr post-processing binary."
+            --notes "Built Linux x86_64 Bazarr post-processing binaries for glibc and musl."

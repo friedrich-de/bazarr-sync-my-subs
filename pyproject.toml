@@ -1,6 +1,6 @@
 [project]
 name = "bazarr-subsync"
-version = "0.1.6"
+version = "0.1.7"
 description = "Bazarr post-processing subtitle synchronizer using alass."
 readme = "README.md"
 requires-python = ">=3.11"
