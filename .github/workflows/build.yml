@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  linux-binary:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: /root/.local/bin/uv sync --group build
+
+      - name: Build binary
+        run: |
+          /root/.local/bin/uv run pyinstaller \
+            --onefile \
+            --clean \
+            --name bazarr-subsync \
+            --paths src \
+            --add-binary "bin/alass:bin" \
+            src/bazarr_subsync/__main__.py
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazarr-subsync-linux-x86_64
+          path: dist/bazarr-subsync

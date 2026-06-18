@@ -1,0 +1,32 @@
+{
+    "name": "Python Development Container",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "mounts": [
+        {
+            "source": "${localEnv:HOME}/.codex/auth.json",
+            "target": "/home/vscode/.codex/auth.json",
+            "type": "bind"
+        }
+    ],
+    "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.codex",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "charliermarsh.ruff",
+                "kevinrose.vsc-python-indent",
+                "mosapride.zenkaku",
+                "ms-azuretools.vscode-docker",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "redhat.vscode-yaml",
+                "shardulm94.trailing-spaces",
+                "tamasfe.even-better-toml",
+                "yzhang.markdown-all-in-one",
+                "eamodio.gitlens",
+                "openai.chatgpt"
+            ]
+        }
+    }
+}
