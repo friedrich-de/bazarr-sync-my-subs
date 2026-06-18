@@ -43,6 +43,9 @@ class PreprocessStats:
     def mark_removed(self, name: str) -> None:
         self.ensure_rule(name).removed += 1
 
+    def mark_removed_count(self, name: str, count: int) -> None:
+        self.ensure_rule(name).removed += count
+
 
 def clean_override_tags(text: str) -> str:
     return ASS_OVERRIDE_REGEX.sub("", text)
@@ -93,6 +96,8 @@ def _ignored_ass_tags(event: pysubs2.SSAEvent) -> list[str]:
 def preprocess_subtitle(input_path: Path, output_path: Path) -> PreprocessStats:
     subtitles = pysubs2.load(str(input_path))
     stats = PreprocessStats(total_events=len(subtitles.events))
+    subtitles.remove_miscellaneous_events()
+    stats.mark_removed_count("miscellaneous", stats.total_events - len(subtitles.events))
     cleaned_events: list[pysubs2.SSAEvent] = []
 
     for event in subtitles.events:
