@@ -5,6 +5,9 @@ on:
     tags:
       - "*"
 
+env:
+  PYTHON_VERSION: "3.12.13"
+
 jobs:
   linux-binary:
     runs-on: ubuntu-latest
@@ -17,10 +20,40 @@ jobs:
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
+            -e PYTHON_VERSION \
             quay.io/pypa/manylinux2014_x86_64 \
             /bin/bash -lc '
+              set -euo pipefail
+              yum install -y \
+                bzip2-devel \
+                gcc \
+                gcc-c++ \
+                libffi-devel \
+                make \
+                openssl-devel \
+                readline-devel \
+                sqlite-devel \
+                wget \
+                xz-devel \
+                zlib-devel
+
+              cd /tmp
+              wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz"
+              tar -xf "Python-${PYTHON_VERSION}.tar.xz"
+              cd "Python-${PYTHON_VERSION}"
+              ./configure \
+                --prefix=/opt/python-shared \
+                --enable-shared \
+                --with-ensurepip=install \
+                LDFLAGS="-Wl,-rpath=/opt/python-shared/lib"
+              make -j"$(nproc)"
+              make install
+
+              export PATH="/opt/python-shared/bin:${PATH}"
+              export LD_LIBRARY_PATH="/opt/python-shared/lib:${LD_LIBRARY_PATH:-}"
+              cd /workspace
               curl -LsSf https://astral.sh/uv/install.sh | sh
-              /root/.local/bin/uv sync --group build
+              /root/.local/bin/uv sync --group build --python /opt/python-shared/bin/python3.12
               /root/.local/bin/uv run pyinstaller \
                 --onefile \
                 --clean \
