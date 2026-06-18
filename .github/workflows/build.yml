@@ -5,6 +5,9 @@ on:
     tags:
       - "*"
 
+permissions:
+  contents: write
+
 env:
   PYTHON_VERSION: "3.12.13"
 
@@ -37,8 +40,22 @@ jobs:
                 src/bazarr_subsync/__main__.py
             '
 
+      - name: Prepare release asset
+        run: |
+          cp dist/bazarr-subsync dist/bazarr-subsync-linux-x86_64
+          chmod +x dist/bazarr-subsync-linux-x86_64
+
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: bazarr-subsync-linux-x86_64
-          path: dist/bazarr-subsync
+          path: dist/bazarr-subsync-linux-x86_64
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/bazarr-subsync-linux-x86_64 \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Built Linux x86_64 Bazarr post-processing binary."
