@@ -2,7 +2,8 @@
 
 `bazarr-subsync` is a Bazarr custom post-processing command that synchronizes a downloaded subtitle in two ways:
 
-- `episode.alass1.srt`: subtitle-to-subtitle synchronization against a usable embedded English subtitle track.
+- `episode.alass1.srt`: subtitle-to-subtitle synchronization against an embedded subtitle track, preferring a usable
+  English dialogue subtitle and falling back to the first embedded text subtitle when needed.
 - `episode.alass2.srt`: audio-based synchronization against the selected episode audio track.
 
 The original downloaded subtitle is never overwritten. Generated `.alass1` and `.alass2` files are replaced if they
@@ -30,17 +31,25 @@ Bundled dependency:
 
 - `bin/alass`, included in the PyInstaller binary with `--add-binary "bin/alass:bin"`
 
-The Linux GitHub Actions build runs in `manylinux2014_x86_64`, so the produced artifact targets the older glibc baseline
-provided by that image.
+Download the binary that matches the C library used by the system where Bazarr runs:
+
+- `glibc` / `gnu`: use this on most general-purpose Linux distributions, such as Debian, Ubuntu, Fedora, Arch,
+  openSUSE, and most non-Alpine host installs.
+- `musl`: use this on Alpine Linux and minimal Alpine-based Docker images, including containers where Bazarr itself runs
+  on Alpine.
+
+If you are running Bazarr in Docker, choose the binary for the container image rather than the host OS. For example, use
+the `musl` binary inside an Alpine-based container even when the Docker host uses glibc.
 
 ## Behavior
 
 Audio selection prefers the first English non-commentary track, avoids commentary/descriptive tracks when possible, and
 falls back to the first usable audio stream.
 
-Embedded subtitle selection uses the first English text subtitle that does not look like signs, captions, songs,
-karaoke, OP, ED, opening, ending, or forced-only material. If no usable embedded subtitle exists, `.alass1` is skipped
-and audio synchronization still runs.
+Embedded subtitle selection prefers the first English text subtitle that does not look like signs, captions, songs,
+karaoke, OP, ED, opening, ending, or forced-only material. If no fitting English subtitle is found, it falls back to the
+first embedded text subtitle. `.alass1` is skipped only when the media has no embedded text subtitle tracks at all, and
+audio synchronization still runs.
 
 Before synchronization, subtitles are cleaned with `pysubs2`: symbols, hearing-impaired text, furigana, initial bracket
 labels, Netflix branding, and ASS signs/songs/karaoke/caption events are removed from temporary synchronization inputs.
