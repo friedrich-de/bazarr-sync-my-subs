@@ -155,12 +155,16 @@ def is_text_subtitle(stream: MediaStream) -> bool:
 
 def select_subtitle_stream(streams: list[MediaStream]) -> StreamSelection | None:
     subtitle_streams = [stream for stream in streams if is_text_subtitle(stream)]
+    if not subtitle_streams:
+        return None
+
     english_dialogue = [
         stream for stream in subtitle_streams if stream.is_english and not has_ignored_subtitle_tag(stream)
     ]
     if english_dialogue:
         return StreamSelection(english_dialogue[0], "first English dialogue subtitle stream")
-    return None
+
+    return StreamSelection(subtitle_streams[0], "first text subtitle fallback")
 
 
 def ignored_tags_in_text(text: str) -> list[str]:

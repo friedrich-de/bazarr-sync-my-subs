@@ -186,7 +186,7 @@ def run_sync(config: SyncConfig) -> int:
     successes = 0
 
     if selected_subtitle is None:
-        LOGGER.info("subtitle-based synchronization skipped: no usable embedded English dialogue subtitle found")
+        LOGGER.info("subtitle-based synchronization skipped: no embedded text subtitle found")
     else:
         LOGGER.info(
             "selected subtitle stream %s for subtitle-based synchronization: %s",
