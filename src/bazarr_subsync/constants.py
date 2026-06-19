@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-SYMBOLS_TO_DELETE = {"\u266a", "\uff5e", "\u2015", "~"}
+SYMBOLS_TO_DELETE = {"\u266a", "\uff5e", "\u2015", "~", "♬", "＞", "＜", "➨"}
 HEARING_IMPAIRED_REGEX = r"\uff08.+?\uff09"
 FURIGANA_REGEX = r"\([ぁ-ゞ]+?\)"
 INITIAL_BRACKETS_REGEX = r"^\(.+\)"
