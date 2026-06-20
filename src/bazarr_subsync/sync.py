@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -92,7 +93,9 @@ def _log_preprocess_stats(label: str, stats: PreprocessStats) -> None:
         LOGGER.info("%s preprocessing ignored ASS tag/style %s removed %s events", label, tag, count)
 
 
-def _atomic_alass(alass_path: Path, reference_path: Path, incorrect_path: Path, output_path: Path) -> None:
+def _atomic_alass(
+    alass_path: Path, reference_path: Path, incorrect_path: Path, output_path: Path, permissions_source: Path
+) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
         prefix=f".{output_path.stem}.",
@@ -103,6 +106,7 @@ def _atomic_alass(alass_path: Path, reference_path: Path, incorrect_path: Path, 
         temp_output = Path(handle.name)
     try:
         run_quiet([str(alass_path), str(reference_path), str(incorrect_path), str(temp_output)])
+        shutil.copymode(permissions_source, temp_output)
         temp_output.replace(output_path)
     except Exception:
         temp_output.unlink(missing_ok=True)
@@ -132,7 +136,7 @@ def _run_subtitle_sync(
         extract_subtitle_stream(episode, reference_stream, reference_raw)
         reference_stats = preprocess_subtitle(reference_raw, reference_clean)
         _log_preprocess_stats("embedded-reference-subtitle", reference_stats)
-        _atomic_alass(alass_path, reference_clean, incorrect_clean, output_path)
+        _atomic_alass(alass_path, reference_clean, incorrect_clean, output_path, subtitles)
     except CommandError as exc:
         LOGGER.error("subtitle-based synchronization failed: %s", str(exc))
         return False
@@ -155,7 +159,7 @@ def _run_audio_sync(
     try:
         incorrect_clean = _preprocess_input(subtitles, working_dir, "downloaded-subtitle-audio-sync")
         extract_audio_stream(episode, audio_stream, audio_reference)
-        _atomic_alass(alass_path, audio_reference, incorrect_clean, output_path)
+        _atomic_alass(alass_path, audio_reference, incorrect_clean, output_path, subtitles)
     except CommandError as exc:
         LOGGER.error("audio-based synchronization failed: %s", str(exc))
         return False
